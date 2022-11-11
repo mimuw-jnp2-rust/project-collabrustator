@@ -1,24 +1,35 @@
-# Frobnicator (this is a template)
+# CollabRustAtor
 
 ## Authors
-- Andrzej Głuszak (@agluszak on GitHub)
-- Linus Torvalds (@torvalds on GitHub)
+
+- Jan Wojtach (@YannVoytaa on GitHub)
 
 ## Description
-Frobnicator is going to be a platformer game similar to Super Mario Bros made using Bevy game engine.
+
+CollabRustAtor is going to be a live collaborative rust code editor and compiler (web app, client-server architecture)
 
 ## Features
-- map generator
-- shooting
-- enemy AI
-- game state saving and loading
-- scores
+
+- user can create a 'room' available for others,
+- single room contains one text document editable by all room members simultaneously (potential feature- more advanced file structure: more files/directories)
+- apart from editing the document, users can compile/run it as a rust file (potential feature- allowing for choosing programming languages other than rust) (for security reasons (infinite loops/...), there would be a time limit for a program to run)
 
 ## Plan
-In the first part we're going to implement the basics: movement, physics and shooting. The enemies will simply bounce from one edge of the platform to the other. There will be only a single map.
 
-In the second part we're going to add random map generator, saving/loading, scores and a more sophisticated AI.
+In the first part I'm going to implement basic web-based rust code editor: no rooms, no concurrent editing, only editing and compiling/running would be available.
+
+In the second part I'm going to add rooms- files can be saved to database (one file per one room), other users can see the changes after refreshing the page (or by clicking the button to reload the file content only- for better user experience).
+
+In the third part I'm going to implement concurrent editing- every client will be connected to WebSocket server and send/receive pieces of information about new file changes in certain room.
 
 ## Libraries
-- Bevy
-- Serde (for serialization)
+
+- Yew (client-side/frontend)
+- Warp (server-side/backend)
+- Serde (serialization)
+- Syntect (syntax highlighting)
+
+## Additional tech stack
+
+- Docker
+- Database (ie. MySQL)
