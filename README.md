@@ -18,9 +18,10 @@ CollabRustAtor is going to be a live collaborative rust code editor and compiler
 
 In the first part I'm going to implement basic web-based rust code editor: no rooms, no concurrent editing, only editing and compiling/running would be available.
 
-In the second part I'm going to add rooms- files can be saved to database (one file per one room), other users can see the changes after refreshing the page (or by clicking the button to reload the file content only- for better user experience).
+In the second part I'm going to add:
 
-In the third part I'm going to implement concurrent editing- every client will be connected to WebSocket server and send/receive pieces of information about new file changes in certain room.
+1. rooms- files can be saved to database (one file per one room), other users can see the changes after refreshing the page (or by clicking the button to reload the file content only- for better user experience);
+2. concurrent editing- every client will be connected to WebSocket server and send/receive pieces of information about new file changes in certain room.
 
 ## Libraries
 
