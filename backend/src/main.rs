@@ -1,5 +1,5 @@
-use room::room_handler;
 use crate::run_code::code_handler;
+use room::room_handler;
 use serde::{Deserialize, Serialize};
 use warp::{self, hyper::Method, Filter};
 pub mod room;
@@ -41,8 +41,7 @@ async fn main() {
             Method::OPTIONS,
             Method::HEAD,
         ]);
-    let room_route = warp::path!("room")
-        .and_then(room_handler);
+    let room_route = warp::path!("room").and_then(room_handler);
 
     let code_route = warp::path("code")
         .and(warp::post())
