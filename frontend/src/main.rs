@@ -142,19 +142,21 @@ impl Component for Main {
         let on_textarea_keydown = |e: KeyboardEvent| {
             let text_area = e.target().unwrap().unchecked_into::<HtmlTextAreaElement>();
             if e.key_code() == 9 {
+                let spaces_in_tab: u32 = 4;
                 e.prevent_default();
                 let start = text_area.selection_start().unwrap_or(None).unwrap_or(0);
                 let end = text_area.selection_end().unwrap_or(None).unwrap_or(0);
                 let current_text = text_area.value();
                 text_area.set_value(
                     format!(
-                        "{}\t{}",
+                        "{}{}{}",
                         &current_text
                             .chars()
                             .into_iter()
                             .take(start as usize)
                             .collect::<String>()
                             .as_str(),
+                        " ".repeat(spaces_in_tab as usize),
                         &current_text
                             .chars()
                             .into_iter()
@@ -165,9 +167,8 @@ impl Component for Main {
                     .as_str(),
                 );
                 text_area
-                    .set_selection_range(start + 1, end + 1)
+                    .set_selection_range(start + spaces_in_tab, end + spaces_in_tab)
                     .unwrap_or_default();
-                //let _r = text_area.set_range_text_with_start_and_end("\t", start, end);
             }
             Msg::SetContent(text_area.value())
         };

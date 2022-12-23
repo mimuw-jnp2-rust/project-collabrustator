@@ -34,3 +34,76 @@ In the second part I'm going to add:
 
 - Docker
 - Database (ie. MySQL)
+
+## Running the application
+
+To run the application locally, you need 'docker' up and running (the app executes every code piece inside a docker container for the security reasons). To install docker, you can check [this](https://docs.docker.com/get-docker/) link.
+
+The code is divided into two parts- server and client part.
+
+To run the server side, go to the 'backend' directory and run
+
+```
+cargo run
+```
+
+To check if everyting is working, go to [localhost:8000/room](localhost:8000/room) and check whether it returns 'ok' message.
+
+To run the client side, go to the 'frontend' directory and run
+
+```
+trunk serve
+```
+
+Then the website should be available under localhost:8080 (or any other free port; the information should be provided in the terminal after executing the 'serve' command).
+
+Example code snippets:
+
+```
+fn main() {
+    println!("abc");
+}
+// shows 'abc' in the terminal as a result;
+```
+
+```
+fn main() {
+    println("abc");
+}
+// gives an error with a standard explanation of a rust compiler;
+```
+
+```
+fn main() {
+    let a = 1;
+    println!("abc");
+}
+// gives a warning, but shows 'abc' as a result as well;
+```
+
+```
+fn main() {
+    loop {
+    }
+}
+// results in timeout after 10 seconds.
+```
+
+```
+fn main() {
+    let mut x = 1;
+    loop {
+        x -= 1;
+        x /= x;
+    }
+}
+// results in a runtime error and 'panic' message.
+```
+
+## Useful resources
+
+These are the links to the websites that helped me build the current project and learn about the technologies used:
+
+- [Yew tutorial](https://yew.rs/docs/tutorial)
+- [Building an API with Rust using Tokio and Warp](https://levelup.gitconnected.com/building-an-api-using-warp-and-tokio-26a52173860a)
+- [Syntect docs and examples](https://github.com/trishume/syntect)

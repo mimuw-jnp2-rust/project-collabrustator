@@ -42,7 +42,6 @@ async fn main() {
             Method::HEAD,
         ]);
     let room_route = warp::path!("room")
-        .and(warp::path::param())
         .and_then(room_handler);
 
     let code_route = warp::path("code")

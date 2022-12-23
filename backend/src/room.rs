@@ -1,4 +1,4 @@
 use warp::{Rejection};
-pub async fn room_handler(id: String) -> Result<String, Rejection> {
-    Ok(id)
+pub async fn room_handler() -> Result<impl warp::Reply, Rejection> {
+    Ok("ok")
 }
