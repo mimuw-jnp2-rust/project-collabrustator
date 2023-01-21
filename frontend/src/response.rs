@@ -1,13 +1,14 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 #[serde()]
 pub struct SpecificResponse {
     pub compile: String,
     pub run: String,
 }
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 #[serde()]
+
 pub struct Res {
     pub errors: SpecificResponse,
     pub outputs: SpecificResponse,
