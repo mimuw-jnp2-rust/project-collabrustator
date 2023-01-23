@@ -23,6 +23,7 @@ async fn handle_rejection(
 ) -> Result<impl warp::Reply, std::convert::Infallible> {
     Ok(warp::reply::json(&format!("{:?}", err)))
 }
+pub type UsersInRoom = Vec<SplitSink<WebSocket, Message>>;
 
 #[tokio::main]
 async fn main() {
@@ -52,7 +53,7 @@ async fn main() {
             Method::HEAD,
         ]);
 
-    let active_users: Arc<Mutex<HashMap<String, Arc<Mutex<Vec<SplitSink<WebSocket, Message>>>>>>> =
+    let active_users: Arc<Mutex<HashMap<String, Arc<Mutex<UsersInRoom>>>>> =
         Arc::new(Mutex::new(HashMap::new()));
 
     let room_route = warp::path!("room" / String)

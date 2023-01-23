@@ -8,6 +8,7 @@ pub mod routes;
 use crate::home::Home;
 use crate::room::Room;
 use crate::routes::Route;
+#[allow(clippy::let_unit_value)]
 fn switch(routes: &Route) -> Html {
     match routes {
         Route::Home => html! { <Home/> },

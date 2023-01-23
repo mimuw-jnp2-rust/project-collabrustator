@@ -9,6 +9,7 @@ use yew_router::{prelude::History, scope_ext::RouterScopeExt};
 
 use crate::routes::Route;
 
+#[allow(dead_code)]
 pub struct Home {
     room_id: String,
     carousel_text: Vec<String>,

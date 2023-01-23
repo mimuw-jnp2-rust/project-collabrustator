@@ -3,12 +3,11 @@ use log::info;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use futures::{stream::SplitSink, SinkExt, StreamExt, TryStreamExt};
+use futures::{SinkExt, StreamExt, TryStreamExt};
 use redis::Client;
-use warp::{
-    ws::{Message, WebSocket},
-    Rejection,
-};
+use warp::{ws::Message, Rejection};
+
+use crate::UsersInRoom;
 pub async fn current_room_code_handler(key: String, client: &Client) -> Result<String, Rejection> {
     let mut conn = client.get_connection().unwrap();
     let code = redis::cmd("GET")
@@ -21,7 +20,7 @@ pub async fn room_handler(
     key: String,
     ws: warp::ws::Ws,
     client: &Client,
-    active_users: Arc<Mutex<HashMap<String, Arc<Mutex<Vec<SplitSink<WebSocket, Message>>>>>>>,
+    active_users: Arc<Mutex<HashMap<String, Arc<Mutex<UsersInRoom>>>>>,
 ) -> Result<impl warp::Reply, Rejection> {
     let conn_mutex = Mutex::new(client.get_connection().unwrap());
 
@@ -34,7 +33,7 @@ pub async fn room_handler(
             let mut users_locked = active_users.lock().await;
             let room_users = users_locked
                 .entry(key.clone())
-                .or_insert(Arc::new(Mutex::new(Vec::new())));
+                .or_insert_with(|| Arc::new(Mutex::new(Vec::new())));
             let mut room_users_lock = room_users.lock().await;
             room_users_lock.push(tx);
         }
@@ -62,7 +61,7 @@ pub async fn room_handler(
                     let res = format!("{:?}", message.as_bytes());
                     info!("Preparing to send message");
                     let mut users_locked = active_users.lock().await;
-                    let user_sockets = users_locked.get_mut(key.clone()).unwrap();
+                    let user_sockets = users_locked.get_mut(&(*key).clone()).unwrap();
                     let mut user_sockets_locked = user_sockets.lock().await;
                     let sockets_iter = user_sockets_locked.iter_mut();
                     info!("Sending message {:?} to all users in room {key}", message);

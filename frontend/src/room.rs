@@ -18,7 +18,7 @@ pub struct Room {
     code_response: Res,
     ws: WebSocketTask,
 }
-#[derive(Properties, PartialEq)]
+#[derive(Properties, PartialEq, Eq)]
 pub struct Props {
     pub id: String,
 }
@@ -30,11 +30,8 @@ impl Component for Room {
     fn create(ctx: &Context<Self>) -> Self {
         let callback = ctx.link().callback(|Json(data): Json<Result<Vec<u8>, _>>| {
             //log::info!("Received message from websocket: {:?}", data);
-            data.map(|recv| String::from_utf8(recv))
-                .map(|code| {
-                    code.map(|code_str| Msg::SetContent(code_str))
-                        .unwrap_or(Msg::Empty)
-                })
+            data.map(String::from_utf8)
+                .map(|code| code.map(Msg::SetContent).unwrap_or(Msg::Empty))
                 .unwrap_or(Msg::Empty)
             //data.map(|recv| Msg::SetContent(String::from_utf8(recv.clone()).unwrap_or(String::from("")))).unwrap_or_else(|_| Msg::Empty)
         });
@@ -45,7 +42,7 @@ impl Component for Room {
             status_callback,
         )
         .unwrap();
-        let code = "\n".repeat(1);
+        let code = "\n".to_string();
         let ss = SyntaxSet::load_defaults_newlines();
         let ts = ThemeSet::load_defaults();
         let theme = ts.themes["base16-ocean.dark"].clone();
