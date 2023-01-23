@@ -6,7 +6,7 @@ use std::{
 use crate::run_code::code_handler;
 use futures::{stream::SplitSink, lock::Mutex};
 use redis::Client;
-use room::{health_handler, room_handler};
+use room::{health_handler, room_handler, current_room_code_handler};
 use serde::{Deserialize, Serialize};
 use warp::{
     self,
@@ -29,7 +29,6 @@ async fn handle_rejection(
 
 #[tokio::main]
 async fn main() {
-    let client = redis::Client::open("redis://127.0.0.1").unwrap();
     env_logger::init();
     let cors = warp::cors()
         .allow_any_origin()
@@ -61,11 +60,19 @@ async fn main() {
 
     let room_route = warp::path!("room" / String)
         .and(warp::ws())
-        .and(warp::any().map(move || client.clone()))
+        .and(warp::any().map(|| redis::Client::open("redis://127.0.0.1").unwrap()))
         .and(warp::any().map(move || active_users.clone()))
         .and_then(
             |key: String, ws: warp::ws::Ws, client: Client, active_users| async move {
                 room_handler(key, ws, &client, active_users).await
+            },
+        );
+
+        let room_code_route = warp::path!("room" / String / "code")
+        .and(warp::any().map(|| redis::Client::open("redis://127.0.0.1").unwrap()))
+        .and_then(
+            |key: String, client: Client| async move {
+                current_room_code_handler(key, &client).await
             },
         );
 
@@ -76,7 +83,7 @@ async fn main() {
         .and(warp::body::json())
         .and_then(code_handler);
 
-    let routes = room_route
+    let routes = room_route.or(room_code_route)
         .or(code_route)
         .or(health_route)
         .recover(handle_rejection)

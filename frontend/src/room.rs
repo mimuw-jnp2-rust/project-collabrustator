@@ -3,7 +3,7 @@ use syntect::highlighting::{Theme, ThemeSet};
 use syntect::html::highlighted_html_for_string;
 use syntect::parsing::{SyntaxReference, SyntaxSet};
 use wasm_bindgen::JsCast;
-use web_sys::{window, Element, HtmlTextAreaElement};
+use web_sys::{window, HtmlTextAreaElement};
 use yew::prelude::*;
 use yew_websocket::macros::Json;
 use yew_websocket::websocket::{WebSocketTask, WebSocketService};
@@ -15,7 +15,6 @@ pub struct Room {
     theme: Theme,
     syntax: SyntaxReference,
     html: String,
-    div: Element,
     code_response: Res,
     ws: WebSocketTask
 }
@@ -31,30 +30,36 @@ impl Component for Room {
     fn create(ctx: &Context<Self>) -> Self {
         let callback = ctx.link().callback(|Json(data): Json<Result<Vec<u8>, _>>| {
             //log::info!("Received message from websocket: {:?}", data);
-            data.map(|recv| Msg::SetContent(String::from_utf8(recv.clone()).unwrap_or(String::from("")))).unwrap_or_else(|_| Msg::Empty)
+            data.map(|recv| String::from_utf8(recv)).map(|code| code.map(|code_str| Msg::SetContent(code_str)).unwrap_or(Msg::Empty)).unwrap_or(Msg::Empty)
+            //data.map(|recv| Msg::SetContent(String::from_utf8(recv.clone()).unwrap_or(String::from("")))).unwrap_or_else(|_| Msg::Empty)
         });
         let status_callback = ctx.link().callback(|_| Msg::Empty);
         let ws = WebSocketService::connect_text(format!("ws://localhost:8000/room/{}", ctx.props().id).as_str(), callback, status_callback).unwrap();
-        let code = "\n".repeat(20);
+        let code = String::from("");
         let ss = SyntaxSet::load_defaults_newlines();
         let ts = ThemeSet::load_defaults();
         let theme = ts.themes["base16-ocean.dark"].clone();
         let syntax = ss.find_syntax_by_extension("rs").unwrap().to_owned();
         let html = highlighted_html_for_string(&code, &ss, &syntax, &theme).expect("Can't parse");
-        let div = web_sys::window()
-            .unwrap()
-            .document()
-            .unwrap()
-            .create_element("div")
-            .unwrap();
-        div.set_inner_html(&html);
+        let id = ctx.props().id.clone();
+        ctx.link().send_future(async move {
+            let client = reqwest::Client::new();
+            let res = client
+                .get(format!("http://127.0.0.1:8000/room/{}/code", id))
+                .send()
+                .await
+                .unwrap()
+                .text()
+                .await
+                .unwrap();
+            Msg::SetContent(res)
+        });
         Self {
             code,
             ss,
             theme,
             syntax,
             html,
-            div,
             ws,
             code_response: Res {
                 ..Default::default()
@@ -73,11 +78,11 @@ impl Component for Room {
                 false
             }
             Msg::SetContent(content) => {
-                self.code = content + "\n";
+                self.code = content;
+                let code_with_endline = self.code.clone() + "\n";
                 self.html =
-                    highlighted_html_for_string(&self.code, &self.ss, &self.syntax, &self.theme)
+                    highlighted_html_for_string(&code_with_endline, &self.ss, &self.syntax, &self.theme)
                         .expect("Can't parse");
-                self.div.set_inner_html(&self.html);
                 true
             }
             Msg::SendCode => {
@@ -117,21 +122,6 @@ impl Component for Room {
                 self.code_response = res;
                 true
             }
-        }
-    }
-
-    fn rendered(&mut self, _: &Context<Self>, first_render: bool) {
-        if first_render {
-            window()
-                .and_then(|w| w.document())
-                .and_then(|d| d.get_element_by_id("editor"))
-                .unwrap()
-                .set_inner_html(&self.html.clone());
-            window()
-                .and_then(|w| w.document())
-                .and_then(|d| d.get_element_by_id("area"))
-                .unwrap()
-                .set_inner_html(&self.code.clone());
         }
     }
 
@@ -184,13 +174,14 @@ impl Component for Room {
                 text_area
                     .set_selection_range(start + spaces_in_tab, end + spaces_in_tab)
                     .unwrap_or_default();
-            }
-            Msg::SetContent(text_area.value())
+                    return Msg::SetContent(text_area.value())
+                }
+            Msg::Empty
         };
         log::info!("Render");
         html! {
             <div id="main">
-                <textarea id="area" spellcheck="false" style={format!("height: {}", new_area_height)} oninput={ctx.link().callback(|e: web_sys::InputEvent| Msg::InputChange(e.target_unchecked_into::<HtmlTextAreaElement>().value()))} onkeydown={ctx.link().callback(on_textarea_keydown)}/>
+                <textarea id="area" spellcheck="false" style={format!("height: {}", new_area_height)} value={self.code.clone()} oninput={ctx.link().callback(|e: web_sys::InputEvent| Msg::InputChange(e.target_unchecked_into::<HtmlTextAreaElement>().value()))} onkeydown={ctx.link().callback(on_textarea_keydown)}/>
                 <div id="editor-line-numbers">
                 {arr.iter().map(|x| html! { <p>{format!("{}", x)}</p> }).collect::<Html>()}
                 </div>
