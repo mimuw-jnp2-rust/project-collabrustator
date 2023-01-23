@@ -1,5 +1,6 @@
 use futures::lock::Mutex;
 use log::info;
+use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -50,15 +51,26 @@ pub async fn room_handler(
                         info!("Message is not text");
                         return Ok(());
                     }
-                    redis::cmd("SET")
-                        .arg(key.clone())
-                        .arg(message.as_bytes())
-                        .query(&mut *conn)
-                        .unwrap_or_else(|_| String::from(""));
-                    drop(conn);
                     let key = &key;
                     let active_users = &active_users;
-                    let res = format!("{:?}", message.as_bytes());
+                    let res = String::from_utf8(message.as_bytes().to_vec()).unwrap();
+                    let json_res: serde_json::Value = serde_json::from_str(&res).unwrap();
+                    if let Some(code) = json_res.get("code") {
+                        redis::cmd("SET")
+                        .arg(key.clone())
+                        .arg(code.as_str())
+                        .query(&mut *conn)
+                        .unwrap_or_else(|_| String::from(""));
+                        drop(conn);
+                        info!("Received code update");
+                    }
+                    else if let Some(_starts_running) = json_res.get("start_running") {
+                        info!("Room {key} started executing their code");
+                    }
+                    else if let Some(_starts_running) = json_res.get("execution_response") {
+                        info!("Room {key} ended executing their code");
+                    }
+                    let message = serde_json::to_string(&json_res).unwrap();
                     info!("Preparing to send message");
                     let mut users_locked = active_users.lock().await;
                     let user_sockets = users_locked.get_mut(&(*key).clone()).unwrap();
@@ -66,10 +78,10 @@ pub async fn room_handler(
                     let sockets_iter = user_sockets_locked.iter_mut();
                     info!("Sending message {:?} to all users in room {key}", message);
                     for socket in sockets_iter {
-                        let _ = socket.send(Message::text(res.clone())).await;
+                        let _ = socket.send(Message::text(serde_json::to_string(&message).unwrap())).await;
                     }
                     info!("Message {:?} sent to all users in room {key}", message);
-                    Ok(())
+                    Ok(())    
                 }
             })
             .await;

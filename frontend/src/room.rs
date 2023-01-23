@@ -1,6 +1,7 @@
 extern crate log;
 use crate::message::Msg;
 use crate::response::{Res, SpecificResponse};
+use serde_json::json;
 use syntect::highlighting::{Theme, ThemeSet};
 use syntect::html::highlighted_html_for_string;
 use syntect::parsing::{SyntaxReference, SyntaxSet};
@@ -28,11 +29,24 @@ impl Component for Room {
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let callback = ctx.link().callback(|Json(data): Json<Result<Vec<u8>, _>>| {
+        let callback = ctx.link().callback(|Json(data): Json<Result<String, _>>| {
             //log::info!("Received message from websocket: {:?}", data);
-            data.map(String::from_utf8)
+            let data = data.unwrap();
+            let js: serde_json::Value = serde_json::from_str(&data).unwrap();
+            if let Some(code) = js.get("code") {
+                return Msg::SetContent(code.as_str().unwrap().repeat(1))
+            }
+            if let Some(_code) = js.get("start_running") {
+                return Msg::Empty
+            }
+            if let Some(response) = js.get("execution_response") {
+                let res: Res = serde_json::from_value(response.clone()).unwrap();
+                return Msg::SetResponseNoWs(res)
+            }
+            Msg::Empty
+            /*data.map(String::from_utf8)
                 .map(|code| code.map(Msg::SetContent).unwrap_or(Msg::Empty))
-                .unwrap_or(Msg::Empty)
+                .unwrap_or(Msg::Empty)*/
             //data.map(|recv| Msg::SetContent(String::from_utf8(recv.clone()).unwrap_or(String::from("")))).unwrap_or_else(|_| Msg::Empty)
         });
         let status_callback = ctx.link().callback(|_| Msg::Empty);
@@ -77,7 +91,10 @@ impl Component for Room {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::InputChange(content) => {
-                self.ws.send(Ok(content.clone()));
+                let message = json!({
+                    "code": content.clone()
+                });
+                self.ws.send(Ok(serde_json::to_string(&message).unwrap()));
                 ctx.link().send_message(Msg::SetContent(content));
                 false
             }
@@ -95,6 +112,10 @@ impl Component for Room {
                 true
             }
             Msg::SendCode => {
+                let message = json!({
+                    "start_running": true
+                });
+                self.ws.send(Ok(serde_json::to_string(&message).unwrap()));
                 let code = self.code.clone();
                 ctx.link().send_message(Msg::SetResponse(Res {
                     errors: SpecificResponse {
@@ -129,9 +150,17 @@ impl Component for Room {
                 true
             }
             Msg::SetResponse(res) => {
+                let message = json!({
+                    "execution_response": res
+                });
+                self.ws.send(Ok(serde_json::to_string(&message).unwrap()));
                 self.code_response = res;
                 true
             }
+            Msg::SetResponseNoWs(res) => {
+                self.code_response = res;
+                true
+            },
         }
     }
 
