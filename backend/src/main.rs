@@ -1,12 +1,9 @@
-use std::{
-    collections::HashMap,
-    sync::Arc,
-};
+use std::{collections::HashMap, sync::Arc};
 
 use crate::run_code::code_handler;
-use futures::{stream::SplitSink, lock::Mutex};
+use futures::{lock::Mutex, stream::SplitSink};
 use redis::Client;
-use room::{health_handler, room_handler, current_room_code_handler};
+use room::{current_room_code_handler, health_handler, room_handler};
 use serde::{Deserialize, Serialize};
 use warp::{
     self,
@@ -68,22 +65,21 @@ async fn main() {
             },
         );
 
-        let room_code_route = warp::path!("room" / String / "code")
+    let room_code_route = warp::path!("room" / String / "code")
         .and(warp::any().map(|| redis::Client::open("redis://127.0.0.1").unwrap()))
-        .and_then(
-            |key: String, client: Client| async move {
-                current_room_code_handler(key, &client).await
-            },
-        );
+        .and_then(|key: String, client: Client| async move {
+            current_room_code_handler(key, &client).await
+        });
 
     let health_route = warp::path!("health" / String).and_then(health_handler);
 
-    let code_route = warp::path("code")
+    let code_route = warp::path!("code" / String)
         .and(warp::post())
         .and(warp::body::json())
         .and_then(code_handler);
 
-    let routes = room_route.or(room_code_route)
+    let routes = room_route
+        .or(room_code_route)
         .or(code_route)
         .or(health_route)
         .recover(handle_rejection)

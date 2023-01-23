@@ -109,10 +109,11 @@ impl Component for Room {
                         run: String::from("Compiling/Running..."),
                     },
                 }));
+                let id = ctx.props().id.clone();
                 ctx.link().send_future(async move {
                     let client = reqwest::Client::new();
                     let res = client
-                        .post("http://127.0.0.1:8000/code")
+                        .post(format!("http://127.0.0.1:8000/code/{id}"))
                         .header("Content-Type", "application/json")
                         .body(format!(
                             "{{\"code\": \"{}\"}}",

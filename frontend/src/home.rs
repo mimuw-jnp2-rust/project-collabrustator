@@ -1,12 +1,11 @@
-
 use std::time::Duration;
 
 use gloo_timers::callback::Interval;
 use web_sys::HtmlInputElement;
 
-use yew_router::prelude::Link;
 use yew::prelude::*;
-use yew_router::{scope_ext::RouterScopeExt, prelude::History};
+use yew_router::prelude::Link;
+use yew_router::{prelude::History, scope_ext::RouterScopeExt};
 
 use crate::routes::Route;
 
@@ -14,13 +13,13 @@ pub struct Home {
     room_id: String,
     carousel_text: Vec<String>,
     text_idx: usize,
-    interval: Interval
+    interval: Interval,
 }
 
 pub enum Msg {
     CreateRoom,
     RoomIdChanged(String),
-    NextText
+    NextText,
 }
 
 impl Component for Home {
@@ -31,12 +30,14 @@ impl Component for Home {
         let carousel_text: Vec<String> = vec![String::from("In a room, you can write Rust code with other people simultaneously and run it remotely. This allows for a more efficient and interactive coding experience."),
         String::from("CollabRustAtor allows you to write Rust code, run it, and collaborate with others in real-time. You can either join an existing room by entering the room's ID or create a new room.")];
         let link = ctx.link().clone();
-        let interval = Interval::new(Duration::from_secs(10).as_millis() as u32, move || link.send_message(Msg::NextText));
-                Self {
+        let interval = Interval::new(Duration::from_secs(10).as_millis() as u32, move || {
+            link.send_message(Msg::NextText)
+        });
+        Self {
             room_id: String::new(),
             carousel_text,
             text_idx: 0,
-            interval
+            interval,
         }
     }
 
@@ -44,7 +45,10 @@ impl Component for Home {
         match msg {
             Msg::CreateRoom => {
                 let new_id = uuid::Uuid::new_v4().to_string();
-                ctx.link().history().unwrap().push(Route::Room{id : new_id});
+                ctx.link()
+                    .history()
+                    .unwrap()
+                    .push(Route::Room { id: new_id });
                 true
             }
             Msg::RoomIdChanged(data) => {
