@@ -5,9 +5,19 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins&family=Roboto&display=swap"
+      rel="stylesheet"
+    />
     <style>
+      * {
+        font-family: "Poppins", sans-serif;
+      }
       body {
         font-size: 1.5rem;
+        margin: 0;
       }
       pre {
         margin: 0;
@@ -37,6 +47,7 @@
         transform: translateX(4.5rem);
         z-index: 1;
         width: 70%;
+        line-height: calc(1.5rem + 4px);
       }
       textarea::-webkit-scrollbar {
         display: none;
@@ -48,6 +59,7 @@
         background-color: #2b303b;
         transform: translateX(4.5rem);
         white-space: normal;
+        line-height: calc(1.5rem + 4px);
       }
       #editor-line-numbers {
         position: absolute;
@@ -76,10 +88,10 @@
       }
       #main {
         width: 75%;
-        margin: 0 auto;
+        margin: 5vh auto;
         white-space: pre-wrap;
       }
-      button {
+      #send-code {
         font-family: "monospace";
         border-radius: 10px 0 0 0;
         background-color: green;
@@ -95,6 +107,176 @@
       #editor-wrap {
         position: relative;
         overflow: hidden;
+      }
+
+      .landing-page {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-family: Arial, sans-serif;
+      }
+
+      header {
+        background-color: #1a73e8;
+        color: white;
+        padding: 20px 10px;
+        width: calc(100% - 20px);
+        font-size: 0.7rem;
+      }
+
+      header h1 {
+        margin: 0;
+      }
+
+      .create-room-section {
+        margin: 20px 0;
+        display: flex;
+        justify-content: center;
+      }
+
+      .create-room-button {
+        background-color: #1a73e8;
+        color: white;
+        font-size: 0.75em;
+        padding: 10px 20px;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+        font-family: "Roboto", sans-serif;
+        font-weight: 500;
+      }
+
+      .create-room-button:hover {
+        background-color: #1e88e5;
+      }
+
+      .join-room-section {
+        margin: 20px 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .join-room-section h2 {
+        margin-bottom: 10px;
+      }
+
+      .join-room-by-id {
+        display: flex;
+        align-items: center;
+      }
+
+      .join-room-by-id label {
+        margin-right: 10px;
+      }
+
+      .join-room-by-id input {
+        padding: 5px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+
+      .join-room-by-id-button {
+        background-color: #1a73e8;
+        font-size: 0.75em;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        cursor: pointer;
+        margin-left: 10px;
+        border-radius: 5px;
+        font-family: "Roboto", sans-serif;
+      }
+
+      .join-room-by-id-button:hover {
+        background-color: #1e88e5;
+      }
+
+      .how-to-use-section {
+        margin: 20px 50px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .how-to-use-section h2 {
+        margin-bottom: 10px;
+      }
+
+      .how-to-use-text {
+        text-align: center;
+        margin: 50px 0;
+      }
+      .how-to-use-text {
+        position: relative;
+        width: 100%;
+      }
+
+      .how-to-use-text p {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        animation: fadeInOut 10s ease-in-out infinite;
+        font-size: 0.75em;
+      }
+
+      @keyframes fadeInOut {
+        0% {
+          opacity: 0;
+        }
+        10% {
+          opacity: 1;
+        }
+        90% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0;
+        }
+      }
+
+      .how-to-use-image {
+        width: 50%;
+        border-radius: 50px;
+      }
+      .landing-page-main {
+        width: calc(100% - 10vh);
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        margin: 15vh 5vw;
+      }
+      .landing-page-main > * {
+        flex: 1;
+      }
+      @media screen and (max-width: 1000px) {
+        .landing-page-main {
+          flex-direction: column;
+          gap: 50px;
+          margin: 5vh 5vw;
+        }
+      }
+
+      .get-room {
+        box-shadow: 0px 10px 20px #222222;
+        border-radius: 10px;
+        padding: 60px 60px;
+        background-color: #f5f5f5;
+      }
+
+      a {
+        width: fit-content;
+        text-decoration: none;
+        color: white;
+      }
+      a > h1 {
+        width: fit-content;
+        display: inline;
       }
     </style>
   </head>

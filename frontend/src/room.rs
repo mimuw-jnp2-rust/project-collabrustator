@@ -1,4 +1,6 @@
 extern crate log;
+use crate::message::Msg;
+use crate::response::{Res, SpecificResponse};
 use syntect::highlighting::{Theme, ThemeSet};
 use syntect::html::highlighted_html_for_string;
 use syntect::parsing::{SyntaxReference, SyntaxSet};
@@ -6,9 +8,7 @@ use wasm_bindgen::JsCast;
 use web_sys::{window, HtmlTextAreaElement};
 use yew::prelude::*;
 use yew_websocket::macros::Json;
-use yew_websocket::websocket::{WebSocketTask, WebSocketService};
-use crate::message::Msg;
-use crate::response::{Res, SpecificResponse};
+use yew_websocket::websocket::{WebSocketService, WebSocketTask};
 pub struct Room {
     code: String,
     ss: SyntaxSet,
@@ -16,11 +16,11 @@ pub struct Room {
     syntax: SyntaxReference,
     html: String,
     code_response: Res,
-    ws: WebSocketTask
+    ws: WebSocketTask,
 }
 #[derive(Properties, PartialEq)]
 pub struct Props {
-    pub id: String
+    pub id: String,
 }
 const TAB_KEYCODE: u32 = 9;
 impl Component for Room {
@@ -30,12 +30,22 @@ impl Component for Room {
     fn create(ctx: &Context<Self>) -> Self {
         let callback = ctx.link().callback(|Json(data): Json<Result<Vec<u8>, _>>| {
             //log::info!("Received message from websocket: {:?}", data);
-            data.map(|recv| String::from_utf8(recv)).map(|code| code.map(|code_str| Msg::SetContent(code_str)).unwrap_or(Msg::Empty)).unwrap_or(Msg::Empty)
+            data.map(|recv| String::from_utf8(recv))
+                .map(|code| {
+                    code.map(|code_str| Msg::SetContent(code_str))
+                        .unwrap_or(Msg::Empty)
+                })
+                .unwrap_or(Msg::Empty)
             //data.map(|recv| Msg::SetContent(String::from_utf8(recv.clone()).unwrap_or(String::from("")))).unwrap_or_else(|_| Msg::Empty)
         });
         let status_callback = ctx.link().callback(|_| Msg::Empty);
-        let ws = WebSocketService::connect_text(format!("ws://localhost:8000/room/{}", ctx.props().id).as_str(), callback, status_callback).unwrap();
-        let code = String::from("");
+        let ws = WebSocketService::connect_text(
+            format!("ws://localhost:8000/room/{}", ctx.props().id).as_str(),
+            callback,
+            status_callback,
+        )
+        .unwrap();
+        let code = "\n".repeat(1);
         let ss = SyntaxSet::load_defaults_newlines();
         let ts = ThemeSet::load_defaults();
         let theme = ts.themes["base16-ocean.dark"].clone();
@@ -74,15 +84,17 @@ impl Component for Room {
                 ctx.link().send_message(Msg::SetContent(content));
                 false
             }
-            Msg::Empty => {
-                false
-            }
+            Msg::Empty => false,
             Msg::SetContent(content) => {
                 self.code = content;
                 let code_with_endline = self.code.clone() + "\n";
-                self.html =
-                    highlighted_html_for_string(&code_with_endline, &self.ss, &self.syntax, &self.theme)
-                        .expect("Can't parse");
+                self.html = highlighted_html_for_string(
+                    &code_with_endline,
+                    &self.ss,
+                    &self.syntax,
+                    &self.theme,
+                )
+                .expect("Can't parse");
                 true
             }
             Msg::SendCode => {
@@ -131,7 +143,7 @@ impl Component for Room {
             .and_then(|w| w.document())
             .and_then(|d| d.get_element_by_id("editor"))
         {
-            None => "30rem".to_string(),
+            None => "2rem".to_string(),
             Some(e) => {
                 e.set_inner_html(&html);
                 format!("{}px", e.client_height())
@@ -174,8 +186,8 @@ impl Component for Room {
                 text_area
                     .set_selection_range(start + spaces_in_tab, end + spaces_in_tab)
                     .unwrap_or_default();
-                    return Msg::SetContent(text_area.value())
-                }
+                return Msg::SetContent(text_area.value());
+            }
             Msg::Empty
         };
         log::info!("Render");
@@ -187,7 +199,7 @@ impl Component for Room {
                 </div>
                 <div id="editor-wrap">
                 <div id="editor"/>
-                <button onclick={ctx.link().callback(move |_| {
+                <button id="send-code" onclick={ctx.link().callback(move |_| {
                     Msg::SendCode
                 })}>{"Run/Compile"}</button>
                 </div>

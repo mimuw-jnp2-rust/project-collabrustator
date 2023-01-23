@@ -1,14 +1,16 @@
-use yew_router::prelude::*;
 use yew::prelude::*;
-pub mod routes;
-pub mod room;
+use yew_router::prelude::*;
+pub mod home;
 pub mod message;
 pub mod response;
-use crate::routes::Route;
+pub mod room;
+pub mod routes;
+use crate::home::Home;
 use crate::room::Room;
+use crate::routes::Route;
 fn switch(routes: &Route) -> Html {
     match routes {
-        Route::Home => html! { <h1>{ "Home" }</h1> },
+        Route::Home => html! { <Home/> },
         Route::Room { id } => html! {
             <Room id={id.clone()}/>
         },
@@ -20,6 +22,9 @@ fn switch(routes: &Route) -> Html {
 fn app() -> Html {
     html! {
         <BrowserRouter>
+            <header>
+                <Link<Route> to={Route::Home}><h1>{"CollabRustAtor"}</h1></Link<Route>>
+            </header>
             <Switch<Route> render={Switch::render(switch)} />
         </BrowserRouter>
     }

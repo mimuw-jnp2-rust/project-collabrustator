@@ -17,3 +17,5 @@ serde = { version = "1.0.130", features = ["derive"] }
 log = "0.4.17"
 env_logger = "0.10.0"
 yew-router = "0.16"
+uuid = { version = "1.2.2", features = ["serde", "v4", "js"] }
+gloo-timers = "0.2.6"

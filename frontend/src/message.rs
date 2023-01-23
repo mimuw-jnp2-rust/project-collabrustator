@@ -5,5 +5,5 @@ pub enum Msg {
     SetContent(String),
     SendCode,
     SetResponse(Res),
-    Empty
+    Empty,
 }
