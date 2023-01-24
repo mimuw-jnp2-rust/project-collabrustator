@@ -1,6 +1,5 @@
 use futures::lock::Mutex;
 use log::info;
-use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -18,14 +17,16 @@ pub async fn current_room_code_handler(key: String, client: &Client) -> Result<S
     Ok(code)
 }
 pub async fn room_handler(
-    key: String,
     ws: warp::ws::Ws,
     client: &Client,
     active_users: Arc<Mutex<HashMap<String, Arc<Mutex<UsersInRoom>>>>>,
 ) -> Result<impl warp::Reply, Rejection> {
     let conn_mutex = Mutex::new(client.get_connection().unwrap());
 
-    Ok(ws.on_upgrade(|socket| async move {
+    Ok(ws.on_upgrade(|mut socket| async move {
+        let first_response = socket.next().await.unwrap().unwrap();
+        let connect_id = first_response.to_str().unwrap_or("");
+        let key = connect_id.to_string();
         let (tx, rx) = socket.split();
         info!("new user connected to room {key}");
         {
@@ -57,17 +58,15 @@ pub async fn room_handler(
                     let json_res: serde_json::Value = serde_json::from_str(&res).unwrap();
                     if let Some(code) = json_res.get("code") {
                         redis::cmd("SET")
-                        .arg(key.clone())
-                        .arg(code.as_str())
-                        .query(&mut *conn)
-                        .unwrap_or_else(|_| String::from(""));
+                            .arg(&(*key).clone())
+                            .arg(code.as_str())
+                            .query(&mut *conn)
+                            .unwrap_or_else(|_| String::from(""));
                         drop(conn);
                         info!("Received code update");
-                    }
-                    else if let Some(_starts_running) = json_res.get("start_running") {
+                    } else if let Some(_starts_running) = json_res.get("start_running") {
                         info!("Room {key} started executing their code");
-                    }
-                    else if let Some(_starts_running) = json_res.get("execution_response") {
+                    } else if let Some(_starts_running) = json_res.get("execution_response") {
                         info!("Room {key} ended executing their code");
                     }
                     let message = serde_json::to_string(&json_res).unwrap();
@@ -78,10 +77,12 @@ pub async fn room_handler(
                     let sockets_iter = user_sockets_locked.iter_mut();
                     info!("Sending message {:?} to all users in room {key}", message);
                     for socket in sockets_iter {
-                        let _ = socket.send(Message::text(serde_json::to_string(&message).unwrap())).await;
+                        let _ = socket
+                            .send(Message::text(serde_json::to_string(&message).unwrap()))
+                            .await;
                     }
                     info!("Message {:?} sent to all users in room {key}", message);
-                    Ok(())    
+                    Ok(())
                 }
             })
             .await;

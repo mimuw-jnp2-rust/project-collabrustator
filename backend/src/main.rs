@@ -56,13 +56,13 @@ async fn main() {
     let active_users: Arc<Mutex<HashMap<String, Arc<Mutex<UsersInRoom>>>>> =
         Arc::new(Mutex::new(HashMap::new()));
 
-    let room_route = warp::path!("room" / String)
+    let room_route = warp::path!("ws" / "room")
         .and(warp::ws())
         .and(warp::any().map(|| redis::Client::open("redis://127.0.0.1").unwrap()))
         .and(warp::any().map(move || active_users.clone()))
         .and_then(
-            |key: String, ws: warp::ws::Ws, client: Client, active_users| async move {
-                room_handler(key, ws, &client, active_users).await
+            |ws: warp::ws::Ws, client: Client, active_users| async move {
+                room_handler(ws, &client, active_users).await
             },
         );
 

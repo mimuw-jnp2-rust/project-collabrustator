@@ -7,4 +7,5 @@ pub enum Msg {
     SetResponse(Res),
     SetResponseNoWs(Res),
     Empty,
+    SendMyId,
 }
