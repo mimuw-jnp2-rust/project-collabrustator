@@ -170,14 +170,14 @@ impl Component for Room {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         let html = self.html.clone();
-        let new_area_height = match window()
+        let (new_area_height, new_area_width) = match window()
             .and_then(|w| w.document())
             .and_then(|d| d.get_element_by_id("editor"))
         {
-            None => "2rem".to_string(),
+            None => ("2rem".to_string(), "100%".to_string()),
             Some(e) => {
                 e.set_inner_html(&html);
-                format!("{}px", e.client_height())
+                (format!("{}px", e.client_height()), format!("{}px"/* subtract left margin */, e.client_width()))
             }
         };
         let rows = &html.lines().count() - 2;
@@ -224,7 +224,7 @@ impl Component for Room {
         log::info!("Render");
         html! {
             <div id="main">
-                <textarea id="area" spellcheck="false" style={format!("height: {}", new_area_height)} value={self.code.clone()} oninput={ctx.link().callback(|e: web_sys::InputEvent| Msg::InputChange(e.target_unchecked_into::<HtmlTextAreaElement>().value()))} onkeydown={ctx.link().callback(on_textarea_keydown)}/>
+                <textarea id="area" spellcheck="false" style={format!("height: {}; width: {}", new_area_height, new_area_width)} value={self.code.clone()} oninput={ctx.link().callback(|e: web_sys::InputEvent| Msg::InputChange(e.target_unchecked_into::<HtmlTextAreaElement>().value()))} onkeydown={ctx.link().callback(on_textarea_keydown)}/>
                 <div id="editor-line-numbers">
                 {arr.iter().map(|x| html! { <p>{format!("{}", x)}</p> }).collect::<Html>()}
                 </div>
