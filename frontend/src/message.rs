@@ -1,7 +1,7 @@
 use crate::response::Res;
 
 pub enum Msg {
-    InputChange(String),
+    InputChange(String, u32),
     SetContent(String),
     SendCode,
     SetResponse(Res),

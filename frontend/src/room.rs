@@ -1,4 +1,5 @@
 extern crate log;
+use crate::controlled_textarea::ControlledTextArea;
 use crate::message::Msg;
 use crate::response::{Res, SpecificResponse};
 use serde_json::json;
@@ -18,6 +19,7 @@ pub struct Room {
     html: String,
     code_response: Res,
     ws: WebSocketTask,
+    cursor: u32,
 }
 #[derive(Properties, PartialEq, Eq)]
 pub struct Props {
@@ -87,15 +89,17 @@ impl Component for Room {
             code_response: Res {
                 ..Default::default()
             },
+            cursor: 0,
         }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Msg::InputChange(content) => {
+            Msg::InputChange(content, cursor) => {
                 let message = json!({ "code": content });
                 self.ws.send(Ok(serde_json::to_string(&message).unwrap()));
                 ctx.link().send_message(Msg::SetContent(content));
+                self.cursor = cursor;
                 false
             }
             Msg::Empty => false,
@@ -177,7 +181,10 @@ impl Component for Room {
             None => ("2rem".to_string(), "100%".to_string()),
             Some(e) => {
                 e.set_inner_html(&html);
-                (format!("{}px", e.client_height()), format!("{}px"/* subtract left margin */, e.client_width()))
+                (
+                    format!("{}px", e.client_height()),
+                    format!("{}px" /* subtract left margin */, e.client_width()),
+                )
             }
         };
         let rows = &html.lines().count() - 2;
@@ -217,14 +224,21 @@ impl Component for Room {
                 text_area
                     .set_selection_range(start + spaces_in_tab, end + spaces_in_tab)
                     .unwrap_or_default();
-                return Msg::InputChange(text_area.value());
+                let cursor = text_area.selection_start().unwrap_or(None).unwrap_or(0);
+                return Msg::InputChange(text_area.value(), cursor);
             }
             Msg::Empty
         };
         log::info!("Render");
+        let cursor = self.cursor;
         html! {
             <div id="main">
-                <textarea id="area" spellcheck="false" style={format!("height: {}; width: {}", new_area_height, new_area_width)} value={self.code.clone()} oninput={ctx.link().callback(|e: web_sys::InputEvent| Msg::InputChange(e.target_unchecked_into::<HtmlTextAreaElement>().value()))} onkeydown={ctx.link().callback(on_textarea_keydown)}/>
+                /*<textarea id="area" spellcheck="false" style={format!("height: {}; width: {}", new_area_height, new_area_width)} value={self.code.clone()} oninput={ctx.link().callback(|e: web_sys::InputEvent| Msg::InputChange(e.target_unchecked_into::<HtmlTextAreaElement>().value()))} onkeydown={ctx.link().callback(on_textarea_keydown)}/>*/
+                <ControlledTextArea style={format!("height: {}; width: {}", new_area_height, new_area_width)} value={self.code.clone()} oninput={ctx.link().callback(|e: web_sys::InputEvent| {
+                    let textarea = e.target_unchecked_into::<HtmlTextAreaElement>();
+                    let cursor = textarea.selection_start().unwrap_or(None).unwrap_or(0);
+                    Msg::InputChange(textarea.value(), cursor)
+                })} onkeydown={ctx.link().callback(on_textarea_keydown)} cursor={cursor}/>
                 <div id="editor-line-numbers">
                 {arr.iter().map(|x| html! { <p>{format!("{}", x)}</p> }).collect::<Html>()}
                 </div>

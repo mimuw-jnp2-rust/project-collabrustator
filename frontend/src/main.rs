@@ -1,5 +1,6 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
+pub mod controlled_textarea;
 pub mod home;
 pub mod message;
 pub mod response;
